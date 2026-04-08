@@ -255,6 +255,8 @@ void releaseVoice(VoicePool& pool, uint8_t midiNote, float sampleRate) {
 
 void panicVoicePool(VoicePool& pool) {
   pool.activeCount = 0;
+  pool.heldCount = 0;
+
   for (uint32_t v = 0; v < MAX_VOICES; v++) {
     pool.activeIndices[v] = 0;
     pool.isActive[v] = 0;
@@ -325,7 +327,7 @@ void handleNoteOn(VoicePool& pool,
 
   pool.porta.lastNote = midiNote;
 
-  if (pool.activeCount == 0) {
+  if (pool.heldCount == 1) {
     if (pool.lfo1.retrigger) {
       pool.lfo1.phase = 0.0f;
       pool.lfo1.delayTimer = pool.lfo1.delayCount;
@@ -347,6 +349,9 @@ void handleNoteOn(VoicePool& pool,
 }
 
 void handleNoteOff(VoicePool& pool, uint8_t midiNote, float sampleRate) {
+  if (pool.heldCount > 0)
+    pool.heldCount--;
+
   if (pool.mono.enabled) {
     pool.mono.heldNotes[midiNote] = false;
     mono::removeNoteFromStack(pool.mono, midiNote);

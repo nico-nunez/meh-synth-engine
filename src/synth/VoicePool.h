@@ -138,6 +138,7 @@ struct VoicePool {
   // ==== Active voice tracking ====
   uint32_t activeCount = 0;
   uint32_t activeIndices[MAX_VOICES]; // Dense array of active indices
+  uint8_t heldCount = 0;
 };
 
 // ===========================
