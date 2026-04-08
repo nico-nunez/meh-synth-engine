@@ -285,6 +285,8 @@ void handleNoteOn(VoicePool& pool,
   // Handle portamento
   float portaOffset = calcPortaOffset(pool, midiNote);
 
+  pool.heldCount++;
+
   // ==== Mono Path(s) ====
   if (pool.mono.enabled) {
     pool.mono.heldNotes[midiNote] = true;
