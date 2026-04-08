@@ -1,0 +1,55 @@
+# Compiled executables
+main
+*.out
+*.exe
+
+# Object files
+*.o
+*.obj
+
+# Compiled libraries
+*.a
+*.lib
+*.so
+*.dylib
+
+# Build directories
+build/
+bin/
+obj/
+out/
+
+# Generated audio files
+*.wav
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.clangd
+compile_commands.json
+
+# CMake (when you eventually use it)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+# Note: Don't ignore hand-written Makefile - only CMake-generated ones
+# If using CMake, it generates Makefiles in build/ which is already ignored
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Misc
+_docs_
+og_synth
+depra

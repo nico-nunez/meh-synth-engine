@@ -1,0 +1,62 @@
+Language: Cpp
+Standard: c++17
+
+# ---- Core layout ----
+ColumnLimit:     100
+IndentWidth:     2
+TabWidth:        2
+UseTab:          Never
+
+# ---- Braces ----
+BreakBeforeBraces: Attach
+
+# ---- Pointers and references ----
+# Matches existing style: float &x, const WavetableBank *bank
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# ---- Function arguments ----
+# Keep args on one line if they fit; align continuation at open paren if they don't
+AlignAfterOpenBracket:          Align
+BinPackArguments:               false
+BinPackParameters:              false
+AllowAllArgumentsOnNextLine:    false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# ---- Short constructs ----
+AllowShortBlocksOnASingleLine:      Empty
+AllowShortFunctionsOnASingleLine:   Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine:       false
+
+# ---- Namespaces ----
+NamespaceIndentation:           None
+CompactNamespaces:              false
+
+# ---- Includes ----
+# Sort within each blank-line-separated group independently
+SortIncludes:        CaseSensitive
+IncludeBlocks:       Preserve
+
+# ---- Spacing ----
+SpaceBeforeParens:              ControlStatements
+SpaceAfterCStyleCast:           false
+SpaceBeforeCpp11BracedList:     false
+Cpp11BracedListStyle:           true
+SpacesInParentheses:            false
+SpacesInSquareBrackets:         false
+SpaceBeforeSquareBrackets:      false
+
+# ---- Comments ----
+ReflowComments:     false
+
+# ---- Alignment ----
+AlignTrailingComments:          true
+AlignConsecutiveMacros:         AcrossEmptyLines
+AlignConsecutiveDeclarations:   false
+AlignConsecutiveAssignments:    false
+
+# ---- Penalty tuning ----
+# Discourage breaking inside function calls — prefer keeping args together
+PenaltyBreakBeforeFirstCallParameter: 200
+PenaltyReturnTypeOnItsOwnLine:        100

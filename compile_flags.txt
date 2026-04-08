@@ -1,0 +1,13 @@
+-xc++
+-std=c++17
+-Isrc
+-Ilibs/dsp/include
+-Ilibs/json/include
+-Wall
+-Weffc++
+-Wextra
+-Werror
+-pedantic-errors
+-Wconversion
+-Wsign-conversion
+-ggdb
