@@ -168,11 +168,9 @@ std::string serializePreset(const Preset& p) {
     root.set("metadata", std::move(meta));
   }
 
-  root.getOrCreate("tempo").set("bpm", JsonValue::number(p.paramValues[param::BPM]));
-
   // ==== All numeric (X-macro) params ====
   for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
-    if (i == param::ParamID::BPM || i == param::ParamID::MASTER_GAIN)
+    if (i == param::ParamID::MASTER_GAIN)
       continue;
 
     const auto& def = param::PARAM_DEFS[i];
@@ -316,15 +314,9 @@ DeserializeResult deserializePreset(const std::string& jsonStr) {
     }
   }
 
-  if (root.has("bpm")) {
-    auto& def = param::PARAM_DEFS[param::ParamID::BPM];
-    p.paramValues[param::BPM] =
-        clampWarnFloat(root["bpm"].asFloat(), def.min, def.max, "bpm", result.warnings);
-  }
-
   // All numeric (X-macro) params
   for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
-    if (i == param::ParamID::BPM || i == param::ParamID::MASTER_GAIN)
+    if (i == param::ParamID::MASTER_GAIN)
       continue;
 
     const auto& def = param::PARAM_DEFS[i];

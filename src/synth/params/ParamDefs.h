@@ -104,9 +104,6 @@
                                                                                                    \
   X(MASTER_GAIN, "master.gain", Float, 0.0f, 2.0f, 1.0f, None)                                     \
                                                                                                    \
-  /* ==== Tempo ==== */                                                                            \
-  X(BPM, "tempo.bpm", Float, 20.0f, 300.0f, 120.0f, BPMSync)                                       \
-                                                                                                   \
   /* ======== Effects ======== */                                                                  \
   /* ==== Distortion ==== */                                                                       \
   X(FX_DISTORTION_DRIVE, "fx.distortion.drive", Float, 1.0f, 10.0f, 1.0f, DistortionDerived)       \

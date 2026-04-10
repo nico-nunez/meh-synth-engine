@@ -233,7 +233,7 @@ void bindReverb(ParamRouter& r, dsp::fx::reverb::ReverbFX& rv) {
 
 // ==== APIs ====
 
-void initParamRouter(ParamRouter& router, voices::VoicePool& pool, float& bpm) {
+void initParamRouter(ParamRouter& router, voices::VoicePool& pool) {
 
   bindOscillator(router.paramBindings, OSC_PARAM_IDS[0], pool.osc1);
   bindOscillator(router.paramBindings, OSC_PARAM_IDS[1], pool.osc2);
@@ -258,7 +258,6 @@ void initParamRouter(ParamRouter& router, voices::VoicePool& pool, float& bpm) {
 
   router.paramBindings[PITCH_BEND_RANGE] = makeFloatBinding(&pool.pitchBend.range);
   router.paramBindings[MASTER_GAIN] = makeFloatBinding(&pool.masterGain);
-  router.paramBindings[BPM] = makeFloatBinding(&bpm);
 
   initMIDIBindings(router);
 }

@@ -43,7 +43,7 @@ struct Engine {
   float sampleRate = DEFAULT_SAMPLE_RATE;
   float invSampleRate = 1.0f / sampleRate;
 
-  float bpm;
+  float bpm = 120.0f;
 
   VoicePool voicePool;
 
@@ -61,7 +61,7 @@ struct Engine {
   void processParamEvent(const ParamEvent& event);
   void processEngineEvent(const EngineEvent& event);
 
-  void processAudioBlock(float** outputBuffer, size_t numChannels, size_t numFrames);
+  void processAudioBlock(float** outputBuffer, size_t numChannels, size_t numFrames, float hostBPM);
 };
 
 Engine createEngine(const EngineConfig& config);

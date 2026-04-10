@@ -32,7 +32,7 @@ Engine createEngine(const EngineConfig& config) {
 
   voices::initVoicePool(engine.voicePool);
 
-  param::router::initParamRouter(engine.paramRouter, engine.voicePool, engine.bpm);
+  param::router::initParamRouter(engine.paramRouter, engine.voicePool);
   param::router::initFXParamRouter(engine.paramRouter, engine.fxChain);
 
   dsp::fx::chain::initFXChain(engine.fxChain, engine.bpm, engine.sampleRate);
@@ -211,7 +211,16 @@ void Engine::processEngineEvent(const EngineEvent& event) {
  * expensive calculation that need to occur more often than once per audio
  * buffer block but NOT on every sample either.  E.g. Modulation
  */
-void Engine::processAudioBlock(float** outputBuffer, size_t numChannels, size_t numFrames) {
+void Engine::processAudioBlock(float** outputBuffer,
+                               size_t numChannels,
+                               size_t numFrames,
+                               float hostBPM) {
+  if (bpm != hostBPM) {
+    bpm = hostBPM;
+    dirtyFlags.mark(param::UpdateGroup::BPMSync);
+    param::sync::syncDirtyParams(*this);
+  }
+
   uint32_t offset = 0;
 
   while (offset < numFrames) {

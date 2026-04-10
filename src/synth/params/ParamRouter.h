@@ -45,7 +45,7 @@ struct ParamRouter {
 };
 
 // ==== API ====
-void initParamRouter(ParamRouter& router, voices::VoicePool& pool, float& bpm);
+void initParamRouter(ParamRouter& router, voices::VoicePool& pool);
 
 void initFXParamRouter(ParamRouter& router, FXChain& fxChain);
 
