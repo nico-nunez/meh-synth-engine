@@ -60,7 +60,7 @@ struct WavetableOsc {
   float phaseIncrements[MAX_VOICES]; // cycles per sample (freq / sampleRate)
 
   // ==== Global settings for all voices in oscillator ====
-  BankID bankID = BankID::Sine;
+  BankID bank = BankID::Sine;
   const WavetableBank* bankPtr = nullptr;
 
   float mixLevel = 1.0f;
@@ -78,7 +78,7 @@ struct WavetableOsc {
   float fixedFreq = 440.0f;
   float fixedPhaseInc = 0.0f; // fixedFreq / sampleRate
 
-  float fmDepthMod = 1.0f;
+  float fmDepth = 1.0f;
   FMRoute fmRoutes[NUM_OSCS] = {};
   uint8_t fmRouteCount = 0;
 

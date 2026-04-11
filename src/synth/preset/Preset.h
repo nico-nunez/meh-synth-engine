@@ -84,7 +84,7 @@ inline Preset createInitPreset() {
   p.metadata.category = "Init";
   p.metadata.description = "Clean starting point";
 
-  for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
+  for (int i = 0; i < param::PARAM_COUNT; i++) {
     p.paramValues[i] = param::PARAM_DEFS[i].defaultVal;
   }
 

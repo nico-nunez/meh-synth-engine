@@ -25,9 +25,9 @@ void retriggerEnvelope(Envelope& env, uint32_t voiceIndex, float sampleRate) {
 void updateCurveTables(Envelope& env) {
   using dsp::envelopes::generateCurveTable;
 
-  generateCurveTable(env.attackCurve, env.attackCurveParam);
-  generateCurveTable(env.decayCurve, env.decayCurveParam);
-  generateCurveTable(env.releaseCurve, env.releaseCurveParam);
+  generateCurveTable(env.attackCurveTable, env.attackCurve);
+  generateCurveTable(env.decayCurveTable, env.decayCurve);
+  generateCurveTable(env.releaseCurveTable, env.releaseCurve);
 }
 
 void updateIncrements(Envelope& env, float sampleRate) {
@@ -46,9 +46,9 @@ float processEnvelope(Envelope& env, uint32_t voiceIndex) {
                                                   env.decayIncrement,
                                                   env.releaseIncrement,
                                                   env.sustainLevel,
-                                                  env.attackCurve,   // NEW
-                                                  env.decayCurve,    // NEW
-                                                  env.releaseCurve); // NEW
+                                                  env.attackCurveTable,
+                                                  env.decayCurveTable,
+                                                  env.releaseCurveTable);
 
   return level;
 }

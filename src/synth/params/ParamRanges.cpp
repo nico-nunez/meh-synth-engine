@@ -98,8 +98,8 @@ float clampResonanceMod(float resonanceMod) {
 float clampScanPosMod(float scanPosMod) {
   return std::clamp(scanPosMod, SCAN_POS_MOD_MIN, SCAN_POS_MOD_MAX);
 }
-float clampFMDepthMod(float fmDepthMod) {
-  return std::clamp(fmDepthMod, FM_DEPTH_MOD_MIN, FM_DEPTH_MOD_MAX);
+float clampFMDepthMod(float fmDepth) {
+  return std::clamp(fmDepth, FM_DEPTH_MOD_MIN, FM_DEPTH_MOD_MAX);
 }
 float clampLFORateMod(float lfoRateMod) {
   return std::clamp(lfoRateMod, LFO_RATE_MOD_MIN, LFO_RATE_MOD_MAX);

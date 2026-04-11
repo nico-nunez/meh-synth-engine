@@ -19,6 +19,87 @@
 
 namespace synth {
 
+namespace {
+void applyMIDICC(Engine& engine, uint8_t cc, uint8_t value) {
+  auto& pool = engine.voicePool;
+
+  if (cc == 1) {
+    pool.modWheelValue = value / 127.0f;
+    return;
+  }
+  if (cc == 64) {
+    bool wasHeld = pool.sustain.held;
+    pool.sustain.held = (value >= 64);
+
+    if (wasHeld && !pool.sustain.held) {
+      // Mono: handle the one voice directly
+      if (pool.mono.enabled) {
+        uint32_t v = pool.mono.voiceIndex;
+
+        if (v < MAX_VOICES && pool.sustain.notes[v]) {
+          pool.sustain.notes[v] = false;
+
+          if (pool.mono.stackDepth > 0) {
+            uint8_t prevNote = pool.mono.noteStack[pool.mono.stackDepth - 1];
+
+            if (pool.porta.enabled) {
+              float from = static_cast<float>(pool.midiNotes[v]);
+              float to = static_cast<float>(prevNote);
+              pool.porta.offsets[v] = (from - to) + pool.porta.offsets[v];
+              pool.porta.lastNote = prevNote;
+            }
+
+            voices::redirectVoicePitch(pool, v, prevNote, engine.sampleRate);
+          } else {
+            envelope::triggerRelease(pool.ampEnv, v);
+            envelope::triggerRelease(pool.filterEnv, v);
+            envelope::triggerRelease(pool.modEnv, v);
+          }
+        }
+        return;
+      }
+
+      // Poly: release all deferred voices
+      for (uint32_t i = 0; i < MAX_VOICES; ++i) {
+        if (pool.sustain.notes[i]) {
+          pool.sustain.notes[i] = false;
+          envelope::triggerRelease(pool.ampEnv, i);
+          envelope::triggerRelease(pool.filterEnv, i);
+          envelope::triggerRelease(pool.modEnv, i);
+        }
+      }
+    }
+    return;
+  }
+
+  ParamID id = ParamID::PARAM_UNKNOWN;
+
+  switch (cc) {
+  case 7:
+    id = ParamID::MASTER_GAIN;
+    break;
+  case 74:
+    id = ParamID::SVF_CUTOFF;
+    break;
+  case 71:
+    id = ParamID::SVF_RESONANCE;
+    break;
+  default:
+    return;
+  }
+
+  const auto& def = getParamDef(id);
+  float denorm = def.min + (value / 127.0f) * (def.max - def.min);
+  param::sync::setParam(engine, id, denorm);
+}
+
+} // namespace
+
+// ================
+//  Engine Methods
+// ================
+
+// ==== Create and Initialize Engine ====
 Engine createEngine(const EngineConfig& config) {
 
   Engine engine{};
@@ -29,13 +110,10 @@ Engine createEngine(const EngineConfig& config) {
   engine.invSampleRate = 1.0f / config.sampleRate;
 
   dsp::buffers::initStereoBuffer(engine.poolBuffer, config.numFrames);
-
   voices::initVoicePool(engine.voicePool);
-
-  param::router::initParamRouter(engine.paramRouter, engine.voicePool);
-  param::router::initFXParamRouter(engine.paramRouter, engine.fxChain);
-
   dsp::fx::chain::initFXChain(engine.fxChain, engine.bpm, engine.sampleRate);
+
+  param::sync::initParamDefaults(engine);
 
   auto initPreset = preset::createInitPreset();
   preset::applyPreset(initPreset, engine);
@@ -44,14 +122,8 @@ Engine createEngine(const EngineConfig& config) {
 }
 
 void Engine::processParamEvent(const ParamEvent& event) {
-  using namespace param;
-
   auto id = static_cast<ParamID>(event.id);
-
-  router::setParamValue(paramRouter, id, event.value);
-
-  dirtyFlags.mark(param::getParamDef(id).updateGroup);
-  sync::syncDirtyParams(*this);
+  param::sync::setParam(*this, id, event.value);
 }
 
 void Engine::processMIDIEvent(const MIDIEvent& event) {
@@ -74,15 +146,7 @@ void Engine::processMIDIEvent(const MIDIEvent& event) {
     break;
 
   case Type::ControlChange: {
-    using param::router::handleMIDICC;
-
-    ParamID id =
-        handleMIDICC(paramRouter, voicePool, event.data.cc.number, event.data.cc.value, sampleRate);
-
-    if (id != ParamID::UNKNOWN) {
-      dirtyFlags.mark(param::getParamDef(id).updateGroup);
-      param::sync::syncDirtyParams(*this);
-    }
+    applyMIDICC(*this, event.data.cc.number, event.data.cc.value);
     break;
   }
 
@@ -111,11 +175,6 @@ void Engine::processEngineEvent(const EngineEvent& event) {
   namespace fx = dsp::fx::chain;
 
   switch (event.type) {
-
-  case EngineEvent::Type::SetNoiseType: {
-    voicePool.noise.type = static_cast<noise::NoiseType>(event.data.setNoiseType.noiseType);
-    return;
-  }
 
   case EngineEvent::Type::AddFMRoute: {
     auto* carrier =

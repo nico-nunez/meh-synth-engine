@@ -3,7 +3,6 @@
 #include "synth/VoicePool.h"
 #include "synth/events/Events.h"
 #include "synth/params/ParamDefs.h"
-#include "synth/params/ParamRouter.h"
 
 #include "dsp/Buffers.h"
 #include "dsp/Waveforms.h"
@@ -25,7 +24,6 @@ using dsp::waveforms::WaveformType;
 using param::ParamID;
 using param::UpdateGroup;
 using param::UpdateGroupFlags;
-using param::router::ParamRouter;
 
 // --- Constants ---
 inline constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
@@ -45,11 +43,11 @@ struct Engine {
 
   float bpm = 120.0f;
 
+  float params[param::PARAM_COUNT]{};
+
   VoicePool voicePool;
 
   FXChain fxChain;
-
-  ParamRouter paramRouter;
 
   StereoBuffer poolBuffer{};
 

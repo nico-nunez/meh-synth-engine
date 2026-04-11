@@ -100,8 +100,8 @@ void recalcReverbDerivedVals(ReverbFX& fx, float sampleRate) {
   fx.cosW = cosf(w);
   fx.sinW = sinf(w);
 
-  fx.decay = powf(10.0f, -3.0f * fx.loopTime / fx.decaySeconds);
-  fx.decayDiffusion = fx.decay * TANK_DIFF_COEFF;
+  fx.decayGain = powf(10.0f, -3.0f * fx.loopTime / fx.decay);
+  fx.decayDiffusion = fx.decayGain * TANK_DIFF_COEFF;
 }
 
 void processReverb(ReverbFX& fx, buffers::StereoBuffer buf, size_t numSamples) {
@@ -209,7 +209,7 @@ void processReverb(ReverbFX& fx, buffers::StereoBuffer buf, size_t numSamples) {
     const float lastB = s.buf[s.offset[DLY2_B] + s.head[DLY2_B]];
 
     // Loop A: seeded from diffusedInput + decay * lastB
-    float sigA = mono + fx.decay * lastB;
+    float sigA = mono + fx.decayGain * lastB;
     {
       float* b = s.buf + s.offset[MOD_A];
       const size_t len = s.len[MOD_A];
@@ -255,10 +255,10 @@ void processReverb(ReverbFX& fx, buffers::StereoBuffer buf, size_t numSamples) {
       const size_t len = s.len[APF_A];
       size_t& head = s.head[APF_A];
       const float d = b[head];
-      const float v = sigA + (-fx.decay) * d;
+      const float v = sigA + (-fx.decayGain) * d;
       b[head] = v;
       head = (head + 1) % len;
-      sigA = d + fx.decay * v;
+      sigA = d + fx.decayGain * v;
     }
     {
       // DLY2_A — fixed integer read
@@ -271,7 +271,7 @@ void processReverb(ReverbFX& fx, buffers::StereoBuffer buf, size_t numSamples) {
     }
 
     // Loop B: seeded from diffusedInput + decay * lastA (symmetric, mirror of A)
-    float sigB = mono + fx.decay * lastA;
+    float sigB = mono + fx.decayGain * lastA;
     {
       // Modulated allpass B — same formula as A, using lfoBim (90° offset for decorrelation)
       float* b = s.buf + s.offset[MOD_B];
@@ -314,10 +314,10 @@ void processReverb(ReverbFX& fx, buffers::StereoBuffer buf, size_t numSamples) {
       const size_t len = s.len[APF_B];
       size_t& head = s.head[APF_B];
       const float d = b[head];
-      const float v = sigB + (-fx.decay) * d;
+      const float v = sigB + (-fx.decayGain) * d;
       b[head] = v;
       head = (head + 1) % len;
-      sigB = d + fx.decay * v;
+      sigB = d + fx.decayGain * v;
     }
     {
       float* b = s.buf + s.offset[DLY2_B];

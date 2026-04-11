@@ -28,9 +28,9 @@ struct Envelope {
   float releaseStartLevels[MAX_VOICES]; // Captured on release
 
   // ==== Curve Tables (shared and regen on curve change) ====
-  CurveTable attackCurve;
-  CurveTable decayCurve;
-  CurveTable releaseCurve;
+  CurveTable attackCurveTable;
+  CurveTable decayCurveTable;
+  CurveTable releaseCurveTable;
 
   // ==== Global ADSR settings (cold data) ====
   float attackMs = 10.0f;
@@ -39,9 +39,9 @@ struct Envelope {
   float releaseMs = 200.0f;
 
   // ==== Curve parameters (cold data) ====
-  float attackCurveParam = CURVE_DEFAULT_ATTACK;
-  float decayCurveParam = CURVE_DEFAULT_DECAY;
-  float releaseCurveParam = CURVE_DEFAULT_RELEASE;
+  float attackCurve = CURVE_DEFAULT_ATTACK;
+  float decayCurve = CURVE_DEFAULT_DECAY;
+  float releaseCurve = CURVE_DEFAULT_RELEASE;
 
   // ==== Pre-calculated increments (updated when UI changes) ====
   float attackIncrement = 0.0f; // 1.0 / (attackMs * 0.001 * sampleRate)

@@ -203,8 +203,6 @@ enum ParamID {
       PARAM_UNKNOWN,
 };
 
-inline constexpr uint8_t PARAM_COUNT = PARAM_UNKNOWN;
-
 // ===================
 // Update Groups
 // ===================

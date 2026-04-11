@@ -14,7 +14,7 @@ using WavetableBank = wavetable::banks::WavetableBank;
 
 struct LFO {
   // null = S&H mode; set to getBankByID(BankID::Sine) at init
-  BankID bankID = BankID::Sine;
+  BankID bank = BankID::Sine;
   const WavetableBank* bankPtr = nullptr;
 
   float phase = 0.0f;     // normalized [0.0, 1.0)

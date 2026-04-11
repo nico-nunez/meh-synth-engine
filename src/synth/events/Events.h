@@ -77,8 +77,6 @@ struct ParamEvent {
 
 struct EngineEvent {
   enum class Type : uint8_t {
-    SetNoiseType,
-
     AddFMRoute,
     RemoveFMRoute,
     ClearFMRoutes,

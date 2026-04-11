@@ -7,7 +7,6 @@
 #include "synth/WavetableOsc.h"
 
 #include "dsp/fx/FXChain.h"
-#include "synth/params/ParamRouter.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -29,11 +28,13 @@ inline ParamID getParamIDByName(const char* name) {
     if (strcmp(PARAM_DEFS[i].name, name) == 0)
       return static_cast<ParamID>(i);
   }
-  return ParamID::UNKNOWN;
+  return ParamID::PARAM_UNKNOWN;
 }
 
 inline float getParamValueByID(const Engine* eng, ParamID id) {
-  return router::getParamValueByID(eng->paramRouter, id);
+  if (!eng || id < 0 || id >= PARAM_COUNT)
+    return 0.0f;
+  return eng->params[static_cast<int>(id)];
 }
 
 inline const char* getParamName(const ParamID id) {

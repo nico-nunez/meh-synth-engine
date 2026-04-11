@@ -603,10 +603,10 @@ OscParams computeOscParams(VoicePool& pool, uint32_t v, uint32_t s) {
   // FM
   auto& oscModState = pool.oscModState;
 
-  float fm1 = pool.osc1.fmDepthMod + dest[ModDest::Osc1FMDepth][v] + lfo[ModDest::Osc1FMDepth];
-  float fm2 = pool.osc2.fmDepthMod + dest[ModDest::Osc2FMDepth][v] + lfo[ModDest::Osc2FMDepth];
-  float fm3 = pool.osc3.fmDepthMod + dest[ModDest::Osc3FMDepth][v] + lfo[ModDest::Osc3FMDepth];
-  float fm4 = pool.osc4.fmDepthMod + dest[ModDest::Osc4FMDepth][v] + lfo[ModDest::Osc4FMDepth];
+  float fm1 = pool.osc1.fmDepth + dest[ModDest::Osc1FMDepth][v] + lfo[ModDest::Osc1FMDepth];
+  float fm2 = pool.osc2.fmDepth + dest[ModDest::Osc2FMDepth][v] + lfo[ModDest::Osc2FMDepth];
+  float fm3 = pool.osc3.fmDepth + dest[ModDest::Osc3FMDepth][v] + lfo[ModDest::Osc3FMDepth];
+  float fm4 = pool.osc4.fmDepth + dest[ModDest::Osc4FMDepth][v] + lfo[ModDest::Osc4FMDepth];
 
   p.fm[0] = computeOscFMMod(pool.osc1, std::max(0.0f, fm1), v, FMSource::Osc1, oscModState);
   p.fm[1] = computeOscFMMod(pool.osc2, std::max(0.0f, fm2), v, FMSource::Osc2, oscModState);

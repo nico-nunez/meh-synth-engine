@@ -6,7 +6,6 @@
 #include "synth/WavetableOsc.h"
 #include "synth/params/ParamDefs.h"
 #include "synth/params/ParamRanges.h"
-#include "synth/params/ParamRouter.h"
 #include "synth/params/ParamSync.h"
 
 #include "dsp/fx/FXChain.h"
@@ -77,12 +76,11 @@ float clampModAmount(mod_matrix::ModDest dest, float amount) {
 ApplyResult applyPreset(const Preset& preset, Engine& engine) {
   ApplyResult result;
   auto& pool = engine.voicePool;
-  auto& router = engine.paramRouter;
 
   // ==== All bound params in one loop ====
-  for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
+  for (int i = 0; i < param::PARAM_COUNT; i++) {
     auto id = static_cast<param::ParamID>(i);
-    param::router::setParamValue(router, id, preset.paramValues[i]);
+    param::sync::setParamDeferred(engine, id, preset.paramValues[i]);
   }
 
   // ==== Enum fields — direct resolution, no string parsing ====
@@ -140,15 +138,13 @@ ApplyResult applyPreset(const Preset& preset, Engine& engine) {
 
 Preset capturePreset(const Engine& engine) {
   const auto& pool = engine.voicePool;
-  const auto& router = engine.paramRouter;
 
   Preset p;
   p.version = CURRENT_PRESET_VERSION;
 
   // ==== All bound params ====
-  for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
-    auto id = static_cast<param::ParamID>(i);
-    p.paramValues[i] = param::router::getParamValueByID(router, id);
+  for (int i = 0; i < param::PARAM_COUNT; i++) {
+    p.paramValues[i] = engine.params[i];
   }
 
   // ==== Enum fields — read directly from engine ====
@@ -193,7 +189,7 @@ void printPreset(const Preset& p) {
 
   // --- Params ---
   printf("[Params]\n");
-  for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
+  for (int i = 0; i < param::PARAM_COUNT; i++) {
     const auto& def = param::PARAM_DEFS[i];
     float v = p.paramValues[i];
     switch (def.type) {

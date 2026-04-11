@@ -19,6 +19,10 @@
 #include "dsp/fx/Reverb.h"
 
 namespace synth::param::sync {
+
+// ==================
+// Anonymous Helpers
+// ==================
 namespace {
 using dsp::fx::chain::FXChain;
 using voices::VoicePool;
@@ -34,7 +38,7 @@ namespace reverb = dsp::fx::reverb;
 
 void updateOscBanks(VoicePool& pool) {
   for (osc::WavetableOsc* osc : {&pool.osc1, &pool.osc2, &pool.osc3, &pool.osc4}) {
-    auto* bank = banks::getBankByID(osc->bankID);
+    auto* bank = banks::getBankByID(osc->bank);
     if (osc->bankPtr != bank)
       osc->bankPtr = bank;
   }
@@ -111,7 +115,7 @@ void updateUnisonSpread(unison::UnisonState& uni) {
 void updateLFOBanks(VoicePool& pool) {
   using namespace banks;
   for (lfo::LFO* lfo : {&pool.lfo1, &pool.lfo2, &pool.lfo3}) {
-    auto* bank = getBankByID(lfo->bankID);
+    auto* bank = getBankByID(lfo->bank);
     if (lfo->bankPtr != bank)
       lfo->bankPtr = bank;
   }
@@ -162,7 +166,98 @@ void updateBPMSync(VoicePool& pool, FXChain& fxChain, const float bpm, const flo
     updateDelayDerived(fxChain.delay, bpm, sampleRate);
 }
 
+inline void assignParam(float& dst, float value, FloatTag) {
+  dst = value;
+}
+
+inline void assignParam(bool& dst, float value, BoolTag) {
+  dst = value >= 0.5f;
+}
+
+inline void assignParam(int8_t& dst, float value, Int8Tag) {
+  dst = static_cast<int8_t>(std::round(value));
+}
+
+inline void assignParam(wavetable::banks::BankID& dst, float value, OscBankIDTag) {
+  dst = static_cast<wavetable::banks::BankID>(static_cast<uint8_t>(std::round(value)));
+}
+
+inline void assignParam(noise::NoiseType& dst, float value, NoiseTypeTag) {
+  dst = static_cast<noise::NoiseType>(static_cast<uint8_t>(std::round(value)));
+}
+
+inline void assignParam(filters::SVFMode& dst, float value, FilterModeTag) {
+  dst = static_cast<filters::SVFMode>(static_cast<uint8_t>(std::round(value)));
+}
+
+inline void assignParam(dsp::fx::distortion::DistortionType& dst, float value, DistortionTypeTag) {
+  dst = static_cast<dsp::fx::distortion::DistortionType>(static_cast<uint8_t>(std::round(value)));
+}
+
+inline void assignParam(wavetable::osc::PhaseMode& dst, float value, PhaseModeTag) {
+  dst = static_cast<wavetable::osc::PhaseMode>(static_cast<uint8_t>(std::round(value)));
+}
+
+inline void assignParam(dsp::tempo::Subdivision& dst, float value, SubdivisionTag) {
+  dst = static_cast<dsp::tempo::Subdivision>(static_cast<uint8_t>(std::round(value)));
+}
+
 } // anonymous namespace
+
+// ==================
+// API Functions
+// ==================
+
+// ==== Initialize defaults ====
+void initParamDefaults(Engine& engine) {
+  for (int i = 0; i < PARAM_COUNT; ++i)
+    engine.params[i] = PARAM_DEFS[i].defaultVal;
+
+  syncAllParams(engine);
+  engine.dirtyFlags.markAll();
+  syncDirtyParams(engine);
+}
+
+// ==== Set ====
+void setParamDeferred(Engine& engine, ParamID id, float value) {
+  if (id < 0 || id >= PARAM_COUNT)
+    return;
+
+  value = clampParam(id, value);
+  engine.params[static_cast<int>(id)] = value;
+  syncParam(engine, id);
+  engine.dirtyFlags.mark(getParamDef(id).updateGroup);
+}
+
+void setParam(Engine& engine, ParamID id, float value) {
+  setParamDeferred(engine, id, value);
+  syncDirtyParams(engine);
+}
+
+// ==== Sync ====
+void syncParam(Engine& engine, ParamID id) {
+  const float value = engine.params[static_cast<int>(id)];
+
+  auto& pool = engine.voicePool;
+  auto& fx = engine.fxChain;
+
+  switch (id) {
+#define X(id, prefix, field, type, min, max, def, group)                                           \
+  case id:                                                                                         \
+    assignParam(prefix.field, value, PARAM_TYPE_TAG(type){});                                      \
+    return;
+    PARAM_LIST
+#undef X
+  default:
+    return;
+  }
+}
+
+void syncAllParams(Engine& engine) {
+  for (int i = 0; i < PARAM_COUNT; i++) {
+    syncParam(engine, static_cast<ParamID>(i));
+  }
+}
 
 void syncDirtyParams(Engine& engine) {
   using param::UpdateGroup;

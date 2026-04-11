@@ -169,7 +169,7 @@ std::string serializePreset(const Preset& p) {
   }
 
   // ==== All numeric (X-macro) params ====
-  for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
+  for (int i = 0; i < param::PARAM_COUNT; i++) {
     if (i == param::ParamID::MASTER_GAIN)
       continue;
 
@@ -315,7 +315,7 @@ DeserializeResult deserializePreset(const std::string& jsonStr) {
   }
 
   // All numeric (X-macro) params
-  for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
+  for (int i = 0; i < param::PARAM_COUNT; i++) {
     if (i == param::ParamID::MASTER_GAIN)
       continue;
 
