@@ -19,15 +19,4 @@ float midiToFrequency(int midiValue) {
   return semitoneToFrequency(midiValue - ROOT_NOTE_MIDI);
 }
 
-// ==== DB Conversion Helpers ====
-float dBtoLinear(float dB) {
-  return std::pow(10.0f, dB / 20.0f);
-}
-
-float linearToDb(float linear) {
-  if (linear <= 0.0f)
-    return -FLT_MAX;
-  return 20.0f * std::log10f(linear);
-}
-
 } // namespace synth::utils

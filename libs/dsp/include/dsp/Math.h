@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cfloat>
 #include <cmath>
 #include <cstdint>
+
 namespace dsp::math {
 
 inline constexpr float PI_F = 3.1415927f;
@@ -93,4 +95,18 @@ inline size_t nextPow2(size_t x) {
   x |= x >> 32;
   return x + 1;
 }
+
+// ======================
+// DB Conversions
+// ======================
+inline float dBtoLinear(float dB) {
+  return std::pow(10.0f, dB / 20.0f);
+}
+
+inline float linearTodB(float linear) {
+  if (linear <= 0.0f)
+    return -FLT_MAX;
+  return 20.0f * std::log10f(linear);
+}
+
 } // namespace dsp::math
