@@ -5,6 +5,10 @@
 
 namespace dsp::buffers {
 
+// =================
+// Stereo Buffer
+// =================
+
 struct StereoBuffer {
   float* buffer = nullptr;
   float* left = nullptr;
@@ -23,5 +27,36 @@ struct StereoRingBuffer : StereoBuffer {
 
 void initStereoRingBuffer(StereoRingBuffer& cb, size_t requestedSize);
 void destroyStereoRingBuffer(StereoRingBuffer& cb);
+
+// ======================
+// Stereo Buffer Pool
+// ======================
+
+struct StereoBufferView {
+  float* left = nullptr;
+  float* right = nullptr;
+  size_t size = 0;
+};
+
+struct StereoBufferSlot {
+  StereoBufferView view{};
+  bool inUse = false;
+};
+
+struct StereoBufferPool {
+  float* storage = nullptr;
+  StereoBufferSlot* slots = nullptr;
+  uint32_t numSlots = 0;
+  uint32_t framesPerSlot = 0;
+};
+
+bool initStereoBufferPool(StereoBufferPool& pool, uint32_t numSlots, uint32_t framesPerSlot);
+void destroyStereoBufferPool(StereoBufferPool& pool);
+
+StereoBufferView getStereoBufferView(const StereoBufferPool& pool, uint32_t slotIndex);
+
+int32_t acquireStereoBufferSlot(StereoBufferPool& pool);
+void releaseStereoBufferSlot(StereoBufferPool& pool, uint32_t slotIndex);
+void clearStereoBuffer(StereoBufferView view);
 
 } // namespace dsp::buffers
