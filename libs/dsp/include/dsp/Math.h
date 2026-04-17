@@ -99,7 +99,7 @@ inline size_t nextPow2(size_t x) {
 // ======================
 // DB Conversions
 // ======================
-inline float dBtoLinear(float dB) {
+inline float dBToLinear(float dB) {
   return std::pow(10.0f, dB / 20.0f);
 }
 
