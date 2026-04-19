@@ -24,8 +24,12 @@ void registerBank(BankID id, WavetableBank* bank) {
     printf("registerBank: registry full\n");
     return;
   }
-  s_registry[id] = bank;
-  s_registryCount++;
+
+  // avoid duplicates (and incrementing) with multiple engines
+  if (!s_registry[id]) {
+    s_registry[id] = bank;
+    s_registryCount++;
+  }
 }
 
 // TODO(nico-nunez): deregiter is needed once wav importing is implemented
