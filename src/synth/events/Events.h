@@ -163,10 +163,10 @@ struct EngineEvent {
 // Scheduled Events
 // ========================
 enum class ScheduledEventOrder : uint8_t {
-  PendingGateNoteOff = 0,
+  GateNoteOff = 0,
   ParamUnlock = 1,
   ParamLock = 2,
-  CutNoteOff = 3,
+  NoteOff = 3,
   NoteOn = 4,
   ExternalBlockStart = 5,
   Reserved = 6,
