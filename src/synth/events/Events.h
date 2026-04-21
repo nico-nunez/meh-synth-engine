@@ -159,4 +159,30 @@ struct EngineEvent {
   } data;
 };
 
+// ========================
+// Scheduled Events
+// ========================
+enum class ScheduledEventOrder : uint8_t {
+  PendingGateNoteOff = 0,
+  ParamUnlock = 1,
+  ParamLock = 2,
+  CutNoteOff = 3,
+  NoteOn = 4,
+  ExternalBlockStart = 5,
+  Reserved = 6,
+};
+
+struct ScheduledEvent {
+  uint32_t sampleOffset = 0;
+  ScheduledEventOrder order = ScheduledEventOrder::Reserved;
+
+  enum class Kind : uint8_t { MIDI, Param, Engine } kind = Kind::MIDI;
+
+  union {
+    MIDIEvent midi;
+    ParamEvent param;
+    EngineEvent engine;
+  } data{};
+};
+
 } // namespace synth::events

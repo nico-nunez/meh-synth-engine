@@ -8,12 +8,14 @@
 #include "dsp/Waveforms.h"
 #include "dsp/fx/FXChain.h"
 
+#include <cstddef>
 #include <cstdint>
 
 namespace synth {
 using events::EngineEvent;
 using events::MIDIEvent;
 using events::ParamEvent;
+using events::ScheduledEvent;
 
 using dsp::fx::chain::FXChain;
 using voices::VoicePool;
@@ -35,6 +37,13 @@ struct EngineConfig {
   float sampleRate = DEFAULT_SAMPLE_RATE;
 };
 
+struct RenderContext {
+  float bpm = 120.0f;
+
+  ScheduledEvent* events = nullptr; // optional
+  size_t numEvents = 0;
+};
+
 struct Engine {
   uint32_t numFrames = DEFAULT_FRAMES;
 
@@ -46,20 +55,20 @@ struct Engine {
   float params[param::PARAM_COUNT]{};
 
   VoicePool voicePool;
-
   FXChain fxChain;
-
   StereoBuffer poolBuffer{};
-
   uint32_t noteCount = 0;
-
   UpdateGroupFlags dirtyFlags;
 
   void processMIDIEvent(const MIDIEvent& event);
   void processParamEvent(const ParamEvent& event);
   void processEngineEvent(const EngineEvent& event);
 
-  void processAudioBlock(float** outputBuffer, size_t numChannels, size_t numFrames, float hostBPM);
+  void renderVoicesRange(uint32_t startFrame, uint32_t frameCount);
+  void applyScheduledEvent(const ScheduledEvent& event);
+
+  void
+  processAudioBlock(float** outputBuffer, size_t numChannels, size_t numFrames, RenderContext ctx);
 };
 
 Engine createEngine(const EngineConfig& config);

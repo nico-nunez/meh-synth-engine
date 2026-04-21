@@ -13,8 +13,6 @@
 #include "dsp/fx/FXChain.h"
 
 #include <algorithm>
-#include <cassert>
-#include <cstdint>
 #include <cstdio>
 
 namespace synth {
@@ -266,6 +264,29 @@ void Engine::processEngineEvent(const EngineEvent& event) {
   }
 }
 
+void Engine::renderVoicesRange(uint32_t startFrame, uint32_t endFrame) {
+  while (startFrame < endFrame) {
+    uint32_t chunkSize = std::min<uint32_t>(ENGINE_BLOCK_SIZE, endFrame - startFrame);
+    auto bufferSlice = dsp::buffers::createStereoBufferSlice(poolBuffer, startFrame);
+    voices::processVoices(voicePool, bufferSlice, chunkSize, invSampleRate);
+    startFrame += chunkSize;
+  }
+}
+
+void Engine::applyScheduledEvent(const ScheduledEvent& event) {
+  switch (event.kind) {
+  case ScheduledEvent::Kind::MIDI:
+    processMIDIEvent(event.data.midi);
+    return;
+  case ScheduledEvent::Kind::Param:
+    processParamEvent(event.data.param);
+    return;
+  case ScheduledEvent::Kind::Engine:
+    processEngineEvent(event.data.engine);
+    return;
+  }
+}
+
 /* NOTE: Use internal Engine block size to allow processing of
  * expensive calculation that need to occur more often than once per audio
  * buffer block but NOT on every sample either.  E.g. Modulation
@@ -273,22 +294,34 @@ void Engine::processEngineEvent(const EngineEvent& event) {
 void Engine::processAudioBlock(float** outputBuffer,
                                size_t numChannels,
                                size_t numFrames,
-                               float hostBPM) {
-  if (bpm != hostBPM) {
-    bpm = hostBPM;
+                               RenderContext ctx) {
+  if (numFrames == 0)
+    return;
+
+  if (bpm != ctx.bpm) {
+    bpm = ctx.bpm;
     dirtyFlags.mark(param::UpdateGroup::BPMSync);
     param::sync::syncDirtyParams(*this);
   }
 
-  uint32_t offset = 0;
+  uint32_t currentFrame = 0;
+  uint32_t evt = 0;
 
-  while (offset < numFrames) {
-    uint32_t blockSize = std::min(ENGINE_BLOCK_SIZE, static_cast<uint32_t>(numFrames) - offset);
-    auto bufferSlice = dsp::buffers::createStereoBufferSlice(poolBuffer, offset);
+  while (ctx.events && evt < ctx.numEvents) {
+    uint32_t offsetFrame = ctx.events[evt].sampleOffset;
 
-    voices::processVoices(voicePool, bufferSlice, blockSize, invSampleRate);
-    offset += blockSize;
+    if (currentFrame < offsetFrame)
+      renderVoicesRange(currentFrame, offsetFrame);
+
+    currentFrame = offsetFrame;
+
+    do {
+      applyScheduledEvent(ctx.events[evt++]);
+    } while (evt < ctx.numEvents && ctx.events[evt].sampleOffset == offsetFrame);
   }
+
+  if (currentFrame < numFrames)
+    renderVoicesRange(currentFrame, static_cast<uint32_t>(numFrames));
 
   dsp::fx::chain::processFXChain(fxChain, poolBuffer, numFrames);
 
