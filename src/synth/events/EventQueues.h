@@ -101,6 +101,12 @@ struct ParamEventQueue {
       printEvent(queue[currentIndex]);
     }
   }
+
+  size_t availableWrite() const {
+    size_t w = writeIndex.load(std::memory_order_acquire);
+    size_t r = readIndex.load(std::memory_order_acquire);
+    return (SIZE - 1) - ((w - r) & WRAP);
+  }
 };
 
 // ========================
