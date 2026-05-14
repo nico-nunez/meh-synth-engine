@@ -5,130 +5,41 @@
 #include "synth/SignalChain.h"
 #include "synth/WavetableOsc.h"
 #include "synth/params/ParamDefs.h"
-#include "synth/params/ParamRanges.h"
 #include "synth/params/ParamSync.h"
+#include "synth/program/SynthProgram.h"
 
 #include "dsp/fx/FXChain.h"
 
 #include <cstdint>
 #include <cstdio>
+#include <utility>
 
 namespace synth::preset {
 
-namespace osc = wavetable::osc;
-
-// ============================================================
-// Helpers (anonymous)
-// ============================================================
 namespace {
-
-// Clamp mod route amount based on destination type.
-float clampModAmount(mod_matrix::ModDest dest, float amount) {
-  using namespace mod_matrix;
-  using namespace param::ranges::mod;
-
-  switch (dest) {
-  case SVFCutoff:
-  case LadderCutoff:
-    return clampCutoffMod(amount);
-  case SVFResonance:
-  case LadderResonance:
-    return clampResonanceMod(amount);
-  case Osc1Pitch:
-  case Osc2Pitch:
-  case Osc3Pitch:
-  case Osc4Pitch:
-    return clampPitchMod(amount);
-  case Osc1Mix:
-  case Osc2Mix:
-  case Osc3Mix:
-  case Osc4Mix:
-    return clampMixLevelMod(amount);
-  case Osc1ScanPos:
-  case Osc2ScanPos:
-  case Osc3ScanPos:
-  case Osc4ScanPos:
-    return clampScanPosMod(amount);
-  case Osc1FMDepth:
-  case Osc2FMDepth:
-  case Osc3FMDepth:
-  case Osc4FMDepth:
-    return clampFMDepthMod(amount);
-  case LFO1Rate:
-  case LFO2Rate:
-  case LFO3Rate:
-    return clampLFORateMod(amount);
-  case LFO1Amplitude:
-  case LFO2Amplitude:
-  case LFO3Amplitude:
-    return clampLFOAmplitudeMod(amount);
-  default:
-    printf("Unknown mod matrix dest: %u", dest);
-    return 0; // unknown dest — pass through
-  }
-}
-
+namespace osc = wavetable::osc;
+namespace mm = mod_matrix;
+namespace sc = signal_chain;
 } // namespace
 
 // ============================================================
 // Apply Preset
 // ============================================================
 ApplyResult applyPreset(const Preset& preset, Engine& engine) {
-  ApplyResult result;
-  auto& pool = engine.voicePool;
+  using namespace program;
+  ApplyResult result{};
 
-  // ==== All bound params in one loop ====
-  for (int i = 0; i < param::PARAM_COUNT; i++) {
-    auto id = static_cast<param::ParamID>(i);
-    param::sync::setParamDeferred(engine, id, preset.paramValues[i]);
-  }
+  SynthProgram compiled{};
+  ProgramBuildResult build = compilePresetToProgram(preset, &compiled);
 
-  // ==== Enum fields — direct resolution, no string parsing ====
-  osc::WavetableOsc* oscs[] = {&pool.osc1, &pool.osc2, &pool.osc3, &pool.osc4};
-  for (int i = 0; i < NUM_OSCS; i++) {
-    oscs[i]->fmRouteCount = preset.oscFmRouteCounts[i];
-    for (uint8_t r = 0; r < preset.oscFmRouteCounts[i]; r++)
-      oscs[i]->fmRoutes[r] = preset.oscFmRoutes[i][r];
-  }
+  result.ok = build.ok;
+  result.errors = std::move(build.errors);
+  result.warnings = std::move(build.warnings);
 
-  // ==== Mod matrix: rebuild from scratch ====
-  mod_matrix::clearRoutes(pool.modMatrix);
-  for (uint8_t i = 0; i < preset.modMatrixCount; i++) {
-    const auto& r = preset.modMatrix[i];
+  if (!result.ok)
+    return result;
 
-    auto src = mod_matrix::parseModSrc(r.source.c_str());
-    auto dest = mod_matrix::parseModDest(r.destination.c_str());
-
-    if (src == mod_matrix::ModSrc::NoSrc || dest == mod_matrix::ModDest::NoDest) {
-      result.warnings.push_back("mod route " + std::to_string(i) + ": invalid src/dest ('" +
-                                r.source + "' -> '" + r.destination + "'), skipped");
-      continue;
-    }
-
-    float amount = clampModAmount(dest, r.amount);
-    mod_matrix::addRoute(pool.modMatrix, src, dest, amount);
-  }
-  mod_matrix::clearPrevModDests(pool.modMatrix);
-
-  // ==== Signal chain ====
-  pool.signalChain.length = 0;
-  for (int i = 0; i < signal_chain::MAX_CHAIN_SLOTS; i++) {
-    pool.signalChain.slots[i] = preset.signalChain[i];
-
-    if (preset.signalChain[i] != signal_chain::SignalProcessor::None)
-      pool.signalChain.length++;
-  }
-
-  // ==== FX chain ordering ====
-  engine.fxChain.length = preset.fxChainLength;
-  for (uint8_t i = 0; i < dsp::fx::chain::MAX_EFFECT_SLOTS; i++)
-    engine.fxChain.slots[i] = preset.fxChain[i];
-
-  engine.dirtyFlags.markAll();
-  param::sync::syncDirtyParams(engine);
-
-  engine.fxChain.delay.state.currentDelaySamples = engine.fxChain.delay.targetDelaySamples;
-
+  applySynthProgram(compiled, engine);
   return result;
 }
 
@@ -159,15 +70,15 @@ Preset capturePreset(const Engine& engine) {
   p.modMatrixCount = pool.modMatrix.count;
   for (uint8_t i = 0; i < pool.modMatrix.count; i++) {
     const auto& route = pool.modMatrix.routes[i];
-    p.modMatrix[i].source = mod_matrix::modSrcToString(route.src);
-    p.modMatrix[i].destination = mod_matrix::modDestToString(route.dest);
+    p.modMatrix[i].source = mm::modSrcToString(route.src);
+    p.modMatrix[i].destination = mm::modDestToString(route.dest);
     p.modMatrix[i].amount = route.amount;
   }
 
   // ==== Signal chain ====
-  for (uint8_t i = 0; i < pool.signalChain.length && i < signal_chain::MAX_CHAIN_SLOTS; i++) {
-    p.signalChain[i] = i < pool.signalChain.length ? pool.signalChain.slots[i]
-                                                   : signal_chain::SignalProcessor::None;
+  for (uint8_t i = 0; i < pool.signalChain.length && i < sc::MAX_CHAIN_SLOTS; i++) {
+    p.signalChain[i] =
+        i < pool.signalChain.length ? pool.signalChain.slots[i] : sc::SignalProcessor::None;
   }
 
   // ==== FX chain ordering ====
@@ -244,10 +155,10 @@ void printPreset(const Preset& p) {
 
   // --- Signal Chain ---
   printf("[Signal Chain]\n");
-  for (int i = 0; i < signal_chain::MAX_CHAIN_SLOTS; i++) {
-    if (p.signalChain[i] == signal_chain::SignalProcessor::None)
+  for (int i = 0; i < sc::MAX_CHAIN_SLOTS; i++) {
+    if (p.signalChain[i] == sc::SignalProcessor::None)
       break;
-    printf("  %d: %s\n", i, signal_chain::signalProcessorToString(p.signalChain[i]));
+    printf("  %d: %s\n", i, sc::signalProcessorToString(p.signalChain[i]));
   }
 }
 } // namespace synth::preset

@@ -1,6 +1,7 @@
 -xc++
 -std=c++17
 -Isrc
+-Itests
 -Ilibs/dsp/include
 -Ilibs/json/include
 -Wall

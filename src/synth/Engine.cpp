@@ -98,10 +98,7 @@ void applyMIDICC(Engine& engine, uint8_t cc, uint8_t value) {
 // ================
 
 // ==== Create and Initialize Engine ====
-Engine createEngine(const EngineConfig& config) {
-
-  Engine engine{};
-
+void initEngine(Engine& engine, const EngineConfig& config) {
   engine.numFrames = config.numFrames;
 
   engine.sampleRate = config.sampleRate;
@@ -115,8 +112,6 @@ Engine createEngine(const EngineConfig& config) {
 
   auto initPreset = preset::createInitPreset();
   preset::applyPreset(initPreset, engine);
-
-  return engine;
 }
 
 void Engine::processParamEvent(const ParamEvent& event) {

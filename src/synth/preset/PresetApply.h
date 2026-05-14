@@ -12,7 +12,9 @@ struct Engine;
 namespace synth::preset {
 
 struct ApplyResult {
-  std::vector<std::string> warnings;
+  bool ok = true;
+  std::vector<std::string> errors{};
+  std::vector<std::string> warnings{};
 };
 
 ApplyResult applyPreset(const Preset& preset, Engine& engine);

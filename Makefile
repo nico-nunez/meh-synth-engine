@@ -25,7 +25,10 @@ build/$(BUILD)/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-# Smoke test — links the library, catches undefined references at link time
+
+# ====================================
+# Smoke/Build Test
+# ====================================
 SMOKE_BIN = build/$(BUILD)/smoke_test
 SMOKE_SRC = tools/smoke_test.cpp
 
@@ -37,3 +40,21 @@ clean:
 	rm -rf $(TARGET) build/
 
 .PHONY: clean smoke
+
+# ====================================
+# Test Runner
+# ====================================
+TEST_TARGET  = test_runner
+TEST_BUILD   = build/$(BUILD)/test
+
+TEST_SOURCES = $(shell find tests -name '*.cpp')
+TEST_OBJECTS = $(patsubst %.cpp,$(TEST_BUILD)/%.o,$(TEST_SOURCES))
+
+test: $(TARGET) $(TEST_OBJECTS)
+			$(CXX) $(CXXFLAGS) -o $(TEST_TARGET) $(TEST_OBJECTS) $(TARGET)
+
+$(TEST_BUILD)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -Itests -c $< -o $@
+
+  .PHONY: clean smoke test

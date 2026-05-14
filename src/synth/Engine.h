@@ -71,6 +71,6 @@ struct Engine {
   processAudioBlock(float** outputBuffer, size_t numChannels, size_t numFrames, RenderContext ctx);
 };
 
-Engine createEngine(const EngineConfig& config);
+void initEngine(Engine& engine, const EngineConfig& config);
 
 } // namespace synth

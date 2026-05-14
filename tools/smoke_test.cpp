@@ -3,8 +3,9 @@
 #include <cstdio>
 
 int main() {
+  synth::Engine engine{};
   synth::EngineConfig config{};
-  synth::Engine engine = synth::createEngine(config);
+  synth::initEngine(engine, config);
 
   printf("smoke_test: createEngine OK (sampleRate=%.0f, numFrames=%u)\n",
          engine.sampleRate,
