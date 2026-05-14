@@ -8,6 +8,7 @@
 
 #include "dsp/fx/FXChain.h"
 
+#include <atomic>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -43,12 +44,32 @@ struct SynthProgram {
   uint8_t fxChainLength = 0;
 };
 
+struct ProgramSwapState {
+  SynthProgram buffers[2]{};
+  std::atomic<bool> pendingReady{false};
+  std::atomic<bool> writeInFlight{false};
+};
+
+struct ProgramSwapResult {
+  bool ok = true;
+  const char* err = nullptr;
+};
+
 struct ProgramBuildResult {
   bool ok = true;
   std::vector<std::string> errors{};
   std::vector<std::string> warnings{};
 };
 
+SynthProgram* getWriteSwapBuffer(ProgramSwapState& swap);
+SynthProgram* getReadSwapBuffer(ProgramSwapState& swap);
+
+ProgramSwapResult prepareProgramSwap(Engine& engine, const SynthProgram& program);
+ProgramSwapResult commitProgramSwap(Engine& engine);
+void abortProgramSwap(Engine& engine);
+void publishPendingProgramIfReady(Engine& engine);
+
+void initProgramSwap(Engine& engine);
 void initSynthProgram(SynthProgram& program);
 
 ProgramBuildResult compilePresetToProgram(const preset::Preset& preset, SynthProgram* out);

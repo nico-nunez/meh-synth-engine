@@ -128,6 +128,20 @@ void clearSynthProgram(SynthProgram& program) {
 
 } // namespace
 
+SynthProgram* getReadSwapBuffer(ProgramSwapState& swap) {
+  return &swap.buffers[0];
+}
+
+SynthProgram* getWriteSwapBuffer(ProgramSwapState& swap) {
+  return &swap.buffers[1];
+}
+
+void initProgramSwap(Engine& engine) {
+  auto* buffer = getReadSwapBuffer(engine.programSwap);
+  initSynthProgram(*buffer);
+  applySynthProgram(*buffer, engine);
+}
+
 void initSynthProgram(SynthProgram& program) {
   for (int i = 0; i < param::PARAM_COUNT; ++i)
     program.paramValues[i] = param::PARAM_DEFS[i].defaultVal;
@@ -313,6 +327,49 @@ void applySynthProgram(const SynthProgram& program, Engine& engine) {
   param::sync::syncDirtyParams(engine);
 
   engine.fxChain.delay.state.currentDelaySamples = engine.fxChain.delay.targetDelaySamples;
+}
+
+ProgramSwapResult prepareProgramSwap(Engine& engine, const SynthProgram& program) {
+  auto& swap = engine.programSwap;
+  bool expected = false;
+  if (!swap.writeInFlight.compare_exchange_strong(expected,
+                                                  true,
+                                                  std::memory_order_acq_rel,
+                                                  std::memory_order_acquire)) {
+    return {false, "program write already in flight"};
+  }
+
+  if (swap.pendingReady.load(std::memory_order_acquire)) {
+    swap.writeInFlight.store(false, std::memory_order_release);
+    return {false, "program swap pending"};
+  }
+
+  swap.buffers[1] = program;
+  return {true, nullptr};
+}
+
+ProgramSwapResult commitProgramSwap(Engine& engine) {
+  auto& swap = engine.programSwap;
+  if (!swap.writeInFlight.load(std::memory_order_acquire))
+    return {false, "no program write in flight"};
+
+  swap.pendingReady.store(true, std::memory_order_release);
+  swap.writeInFlight.store(false, std::memory_order_release);
+  return {true, nullptr};
+}
+
+void abortProgramSwap(Engine& engine) {
+  engine.programSwap.writeInFlight.store(false, std::memory_order_release);
+}
+
+void publishPendingProgramIfReady(Engine& engine) {
+  auto& swap = engine.programSwap;
+  if (!swap.pendingReady.load(std::memory_order_acquire))
+    return;
+
+  swap.buffers[0] = swap.buffers[1];
+  applySynthProgram(swap.buffers[0], engine);
+  swap.pendingReady.store(false, std::memory_order_release);
 }
 
 } // namespace synth::program

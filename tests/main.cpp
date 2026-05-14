@@ -22,7 +22,10 @@ void printSuiteResult() {
     printf("  " ANSI_RED "✗ %d passed, %d failed" ANSI_RESET "\n", g_suite_passed, g_suite_failed);
 }
 
+// <Declare Tests>
+void runSynthProgramPublicationTests();
 void runSynthProgramTests();
+// </ Declare Tests>
 
 int main(int argc, char* argv[]) {
   int buildSecs = -1;
@@ -38,11 +41,10 @@ int main(int argc, char* argv[]) {
 
   auto t0 = std::chrono::steady_clock::now();
 
-  // <TESTS>
-
+  // <Call Tests>
+  runSynthProgramPublicationTests();
   runSynthProgramTests();
-
-  // </ TESTS>
+  // </ Call Tests>
 
   printSuiteResult();
 

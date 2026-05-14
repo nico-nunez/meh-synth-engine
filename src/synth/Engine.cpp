@@ -6,11 +6,11 @@
 #include "synth/events/Events.h"
 #include "synth/params/ParamDefs.h"
 #include "synth/params/ParamSync.h"
-#include "synth/preset/Preset.h"
 #include "synth/preset/PresetApply.h"
 
 #include "dsp/Buffers.h"
 #include "dsp/fx/FXChain.h"
+#include "synth/program/SynthProgram.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -109,9 +109,7 @@ void initEngine(Engine& engine, const EngineConfig& config) {
   dsp::fx::chain::initFXChain(engine.fxChain, engine.bpm, engine.sampleRate);
 
   param::sync::initParamDefaults(engine);
-
-  auto initPreset = preset::createInitPreset();
-  preset::applyPreset(initPreset, engine);
+  program::initProgramSwap(engine);
 }
 
 void Engine::processParamEvent(const ParamEvent& event) {
@@ -246,13 +244,6 @@ void Engine::processEngineEvent(const EngineEvent& event) {
     return;
   }
 
-  case EngineEvent::Type::ApplyPreset: {
-    if (!event.data.applyPreset.preset)
-      return;
-    preset::applyPreset(*event.data.applyPreset.preset, *this);
-    return;
-  }
-
   case EngineEvent::Type::Panic:
     voices::panicVoicePool(voicePool);
     return;
@@ -292,6 +283,8 @@ void Engine::processAudioBlock(float** outputBuffer,
                                RenderContext ctx) {
   if (numFrames == 0)
     return;
+
+  program::publishPendingProgramIfReady(*this);
 
   if (bpm != ctx.bpm) {
     bpm = ctx.bpm;

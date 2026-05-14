@@ -4,7 +4,6 @@
 #include "synth/WavetableOsc.h"
 
 #include "dsp/fx/FXChain.h"
-#include "synth/preset/Preset.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -91,7 +90,6 @@ struct EngineEvent {
     SetFXChain,
     ClearFXChain,
 
-    ApplyPreset,
     Panic,
   };
 
@@ -148,10 +146,6 @@ struct EngineEvent {
     struct {
       uint8_t reserved;
     } clearFXChain;
-
-    struct {
-      const preset::Preset* preset;
-    } applyPreset;
 
     struct {
       uint8_t reserved;

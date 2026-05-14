@@ -3,6 +3,7 @@
 #include "synth/VoicePool.h"
 #include "synth/events/Events.h"
 #include "synth/params/ParamDefs.h"
+#include "synth/program/SynthProgram.h"
 
 #include "dsp/Buffers.h"
 #include "dsp/Waveforms.h"
@@ -17,15 +18,16 @@ using events::MIDIEvent;
 using events::ParamEvent;
 using events::ScheduledEvent;
 
-using dsp::fx::chain::FXChain;
-using voices::VoicePool;
-
 using dsp::buffers::StereoBuffer;
+using dsp::fx::chain::FXChain;
 using dsp::waveforms::WaveformType;
 
 using param::ParamID;
 using param::UpdateGroup;
 using param::UpdateGroupFlags;
+
+using program::ProgramSwapState;
+using voices::VoicePool;
 
 // --- Constants ---
 inline constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
@@ -59,6 +61,8 @@ struct Engine {
   StereoBuffer poolBuffer{};
   uint32_t noteCount = 0;
   UpdateGroupFlags dirtyFlags;
+
+  ProgramSwapState programSwap{};
 
   void processMIDIEvent(const MIDIEvent& event);
   void processParamEvent(const ParamEvent& event);

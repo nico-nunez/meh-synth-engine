@@ -7,10 +7,40 @@
 #include "synth/Engine.h"
 #include "synth/WavetableBanks.h"
 #include "synth/params/ParamDefs.h"
+#include "synth/program/SynthProgram.h"
 
 #include <cstdint>
 
 namespace synth::preset {
+
+bool publishProgramToEngine(const Preset& preset, Engine& engine) {
+  program::SynthProgram compiled{};
+  auto build = program::compilePresetToProgram(preset, &compiled);
+  if (!build.ok) {
+    for (const auto& e : build.errors)
+      printf("  error: %s\n", e.c_str());
+    return false;
+  }
+
+  for (const auto& w : build.warnings)
+    printf("  warning: %s\n", w.c_str());
+
+  auto prepare = program::prepareProgramSwap(engine, compiled);
+  if (!prepare.ok) {
+    printf("  error: %s\n", prepare.err ? prepare.err : "program swap prepare failed");
+    return false;
+  }
+
+  auto commit = program::commitProgramSwap(engine);
+  if (!commit.ok) {
+    program::abortProgramSwap(engine);
+    printf("  error: %s\n", commit.err ? commit.err : "program swap commit failed");
+    return false;
+  }
+
+  program::publishPendingProgramIfReady(engine);
+  return true;
+}
 
 // ============================================================
 // Process Preset Input Command (terminal) Helper
@@ -65,7 +95,9 @@ void processPresetCmd(std::istringstream& iss, Engine& engine) {
       return;
     }
 
-    auto applyResult = applyPreset(loadResult.preset, engine);
+    const bool published = publishProgramToEngine(loadResult.preset, engine);
+    if (!published)
+      return;
 
     printf("Loaded: %s", loadResult.preset.metadata.name.c_str());
     if (!loadResult.preset.metadata.category.empty())
@@ -75,17 +107,14 @@ void processPresetCmd(std::istringstream& iss, Engine& engine) {
     // Print all warnings (load + apply)
     for (const auto& w : loadResult.warnings)
       printf("  warning: %s\n", w.c_str());
-    for (const auto& w : applyResult.warnings)
-      printf("  warning: %s\n", w.c_str());
 
     // ---- preset init ----
   } else if (subCmd == "init") {
     auto initPreset = createInitPreset();
-    auto applyResult = applyPreset(initPreset, engine);
+    if (!publishProgramToEngine(initPreset, engine))
+      return;
 
     printf("Init preset applied\n");
-    for (const auto& w : applyResult.warnings)
-      printf("  warning: %s\n", w.c_str());
 
     // ---- preset list ----
   } else if (subCmd == "list") {
