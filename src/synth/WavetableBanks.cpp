@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <mutex>
 
 namespace synth::wavetable::banks {
 
@@ -79,10 +80,14 @@ BankID parseBankID(const char* name) {
 // Bank Initialization
 // ================================
 void initFactoryBanks() {
-  registerBank(BankID::Sine, dsp::wavetable::generateSine());
-  registerBank(BankID::Saw, dsp::wavetable::generateSaw());
-  registerBank(BankID::Square, dsp::wavetable::generateSquare());
-  registerBank(BankID::Triangle, dsp::wavetable::generateTriangle());
-  registerBank(BankID::SineToSaw, dsp::wavetable::generateSineToSaw());
+  static std::once_flag once;
+  std::call_once(once, [] {
+    registerBank(BankID::Sine, dsp::wavetable::generateSine());
+    registerBank(BankID::Saw, dsp::wavetable::generateSaw());
+    registerBank(BankID::Square, dsp::wavetable::generateSquare());
+    registerBank(BankID::Triangle, dsp::wavetable::generateTriangle());
+    registerBank(BankID::SineToSaw, dsp::wavetable::generateSineToSaw());
+  });
 }
+
 } // namespace synth::wavetable::banks
